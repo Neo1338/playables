@@ -6,8 +6,6 @@ class CocktailMergeGame {
     // Game constants
     this.GRID_SIZE = 3;
     this.CELL_SIZE = 120;
-    this.GRID_OFFSET_X = 40;
-    this.GRID_OFFSET_Y = 150;
     this.GAME_DURATION = 30; // seconds
 
     // Object pools for performance
@@ -79,21 +77,33 @@ class CocktailMergeGame {
   }
 
   createBackground() {
-    // Create a background rectangle
+    // Create a multi-layered background
     const background = new PIXI.Graphics();
-    background.beginFill(0x1a1a2e);
-    background.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
-    background.endFill();
-    this.app.stage.addChild(background);
+    // Create a radial gradient effect manually
+    const centerX = this.app.screen.width / 2;
+    const centerY = this.app.screen.height / 2;
+    const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
 
-    // Add decorative elements
-    for (let i = 0; i < 20; i++) {
-      const star = new PIXI.Graphics();
-      star.beginFill(0xffffff);
-      star.drawCircle(Math.random() * this.app.screen.width, Math.random() * this.app.screen.height, Math.random() * 2 + 1);
-      star.endFill();
-      this.app.stage.addChild(star);
+    // Draw concentric circles to simulate gradient
+    for (let r = maxRadius; r > 0; r -= 10) {
+      const alpha = (r / maxRadius) * 0.3;
+      const color = 0x1a1a2e;
+      background.beginFill(color, alpha);
+      background.drawCircle(centerX, centerY, r);
+      background.endFill();
     }
+
+    // Add subtle pattern
+    for (let i = 0; i < 50; i++) {
+      const x = (i * 37) % this.app.screen.width; // Use prime number for more random-like distribution
+      const y = (i * 73) % this.app.screen.height;
+      const size = Math.random() * 1.5 + 0.5;
+      background.beginFill(0xffffff, 0.1);
+      background.drawCircle(x, y, size);
+      background.endFill();
+    }
+
+    this.app.stage.addChild(background);
   }
 
   createGrid() {
@@ -101,19 +111,33 @@ class CocktailMergeGame {
     this.gridContainer = new PIXI.Container();
     this.app.stage.addChild(this.gridContainer);
 
+    // Center the grid in the available space
+    const totalGridWidth = this.GRID_SIZE * this.CELL_SIZE;
+    const totalGridHeight = this.GRID_SIZE * this.CELL_SIZE;
+    const startX = (this.app.screen.width - totalGridWidth) / 2;
+    const startY = (this.app.screen.height - totalGridHeight) / 2 + 30; // Slightly lower to account for UI elements
+
     // Create grid cells
     for (let row = 0; row < this.GRID_SIZE; row++) {
       for (let col = 0; col < this.GRID_SIZE; col++) {
-        const cellX = this.GRID_OFFSET_X + col * this.CELL_SIZE;
-        const cellY = this.GRID_OFFSET_Y + row * this.CELL_SIZE;
+        const cellX = startX + col * this.CELL_SIZE;
+        const cellY = startY + row * this.CELL_SIZE;
 
         // Cell background
         const cellBg = new PIXI.Graphics();
-        cellBg.lineStyle(2, 0xffffff, 0.3);
-        cellBg.beginFill(0x000000, 0.2);
-        cellBg.drawRoundedRect(cellX, cellY, this.CELL_SIZE, this.CELL_SIZE, 10);
+        cellBg.lineStyle(3, 0xffffff, 0.4);
+        cellBg.beginFill(0x000000, 0.3);
+        cellBg.drawRoundedRect(cellX, cellY, this.CELL_SIZE, this.CELL_SIZE, 12);
         cellBg.endFill();
         this.gridContainer.addChild(cellBg);
+
+        // Add subtle inner shadow for depth
+        const innerShadow = new PIXI.Graphics();
+        innerShadow.lineStyle(1, 0x000000, 0.3);
+        innerShadow.beginFill(0x000000, 0.1);
+        innerShadow.drawRoundedRect(cellX + 2, cellY + 2, this.CELL_SIZE - 4, this.CELL_SIZE - 4, 10);
+        innerShadow.endFill();
+        this.gridContainer.addChild(innerShadow);
 
         // Store cell reference
         if (!this.grid[row][col]) {
@@ -124,6 +148,7 @@ class CocktailMergeGame {
             cocktail: null,
             row: row,
             col: col,
+            innerShadow: innerShadow, // Keep reference for updates
           };
         }
       }
@@ -258,29 +283,48 @@ class CocktailMergeGame {
   }
 
   showAINotification(message) {
-    // Create a temporary notification
+    // Create a temporary notification with enhanced styling
     const notification = new PIXI.Text(message, {
       fontFamily: 'Arial',
-      fontSize: 18,
-      fill: 0x00ffff,
+      fontSize: 20,
+      fill: [0xffff00, 0xffd700], // Gradient effect
       align: 'center',
       fontWeight: 'bold',
+      dropShadow: true,
+      dropShadowColor: 0x000000,
+      dropShadowBlur: 4,
+      dropShadowAngle: 0,
+      dropShadowDistance: 0,
     });
     notification.anchor.set(0.5);
     notification.x = this.app.screen.width / 2;
     notification.y = 100;
-    this.app.stage.addChild(notification);
 
-    // Fade out effect
+    // Add background for better visibility
+    const bg = new PIXI.Graphics();
+    const bounds = notification.getBounds();
+    bg.beginFill(0x000000, 0.6);
+    bg.drawRoundedRect(-bounds.width / 2 - 10, -bounds.height / 2 - 5, bounds.width + 20, bounds.height + 10, 10);
+    bg.endFill();
+
+    const container = new PIXI.Container();
+    container.addChild(bg);
+    container.addChild(notification);
+    container.x = this.app.screen.width / 2;
+    container.y = 100;
+
+    this.app.stage.addChild(container);
+
+    // Animate and fade out effect
     let alpha = 1;
     const fadeOut = () => {
       alpha -= 0.02;
-      notification.alpha = alpha;
+      container.alpha = alpha;
 
       if (alpha > 0) {
         requestAnimationFrame(fadeOut);
       } else {
-        this.app.stage.removeChild(notification);
+        this.app.stage.removeChild(container);
       }
     };
     fadeOut();
@@ -489,26 +533,36 @@ class CocktailMergeGame {
     const centerX = cell.x + this.CELL_SIZE / 2;
     const centerY = cell.y + this.CELL_SIZE / 2;
 
-    // Outer expanding circle
-    const outerCircle = new PIXI.Graphics();
-    outerCircle.beginFill(0xffff00, 0.6);
-    outerCircle.drawCircle(centerX, centerY, 10);
-    outerCircle.endFill();
-    effectContainer.addChild(outerCircle);
+    // Create a multi-layered effect
+    // Outer glow
+    const outerGlow = new PIXI.Graphics();
+    outerGlow.beginFill(0xffff00, 0.3);
+    outerGlow.drawCircle(centerX, centerY, 20);
+    outerGlow.endFill();
+    effectContainer.addChild(outerGlow);
+
+    // Main expanding circle
+    const mainCircle = new PIXI.Graphics();
+    mainCircle.lineStyle(4, 0xffff00, 1);
+    mainCircle.beginFill(0xffff00, 0.4);
+    mainCircle.drawCircle(centerX, centerY, 10);
+    mainCircle.endFill();
+    effectContainer.addChild(mainCircle);
 
     // Inner particles
     const particles = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       const particle = new PIXI.Graphics();
-      particle.beginFill(0xffffff, 0.8);
-      particle.drawCircle(centerX, centerY, 5);
+      particle.beginFill(0xffffff, 0.9);
+      particle.drawCircle(centerX, centerY, 4);
       particle.endFill();
       effectContainer.addChild(particle);
       particles.push({
         graphic: particle,
-        angle: (i * Math.PI * 2) / 8,
+        angle: (i * Math.PI * 2) / 12,
         distance: 0,
-        speed: 2,
+        speed: 3,
+        size: Math.random() * 3 + 2,
       });
     }
 
@@ -516,25 +570,31 @@ class CocktailMergeGame {
     let scale = 0.1;
     let time = 0;
     const animate = () => {
-      if (time > 60) {
-        // Run for about 1 second at 60fps
+      if (time > 45) {
+        // Run for about 0.75 seconds at 60fps
         this.app.stage.removeChild(effectContainer);
         return;
       }
 
-      // Scale outer circle
-      scale += 0.1;
-      outerCircle.scale.set(scale);
-      outerCircle.alpha = 1 - scale * 0.3;
+      // Scale and fade effects
+      scale += 0.15;
+      const alpha = 1 - time / 45;
 
-      // Move particles outward
-      particles.forEach((p) => {
+      mainCircle.scale.set(scale);
+      mainCircle.alpha = alpha;
+
+      outerGlow.scale.set(scale * 0.8);
+      outerGlow.alpha = alpha * 0.5;
+
+      // Move particles outward with rotation
+      particles.forEach((p, idx) => {
         p.distance += p.speed;
-        const x = centerX + Math.cos(p.angle) * p.distance;
-        const y = centerY + Math.sin(p.angle) * p.distance;
+        const angleOffset = time * 0.1; // Rotation effect
+        const x = centerX + Math.cos(p.angle + angleOffset) * p.distance;
+        const y = centerY + Math.sin(p.angle + angleOffset) * p.distance;
         p.graphic.x = x;
         p.graphic.y = y;
-        p.graphic.alpha = 1 - p.distance / 100;
+        p.graphic.alpha = alpha * 0.8;
       });
 
       time++;
