@@ -111,11 +111,11 @@ class CocktailMergeGame {
     this.gridContainer = new PIXI.Container();
     this.app.stage.addChild(this.gridContainer);
 
-    // Center the grid in the available space
+    // Center the grid in the available space, accounting for UI elements
     const totalGridWidth = this.GRID_SIZE * this.CELL_SIZE;
     const totalGridHeight = this.GRID_SIZE * this.CELL_SIZE;
     const startX = (this.app.screen.width - totalGridWidth) / 2;
-    const startY = (this.app.screen.height - totalGridHeight) / 2 + 30; // Slightly lower to account for UI elements
+    const startY = (this.app.screen.height - totalGridHeight) / 2 + 10; // Adjusted to account for UI elements at top and bottom
 
     // Create grid cells
     for (let row = 0; row < this.GRID_SIZE; row++) {
@@ -304,7 +304,7 @@ class CocktailMergeGame {
     const bg = new PIXI.Graphics();
     const bounds = notification.getBounds();
     bg.beginFill(0x000000, 0.7);
-    bg.lineStyle(2, 0xFFFF00, 1);
+    bg.lineStyle(2, 0xffff00, 1);
     bg.drawRoundedRect(-bounds.width / 2 - 15, -bounds.height / 2 - 8, bounds.width + 30, bounds.height + 16, 12);
     bg.endFill();
 
