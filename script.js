@@ -298,20 +298,21 @@ class CocktailMergeGame {
     });
     notification.anchor.set(0.5);
     notification.x = this.app.screen.width / 2;
-    notification.y = 100;
+    notification.y = 20; // Position higher to avoid overlapping with game grid
 
     // Add background for better visibility
     const bg = new PIXI.Graphics();
     const bounds = notification.getBounds();
-    bg.beginFill(0x000000, 0.6);
-    bg.drawRoundedRect(-bounds.width / 2 - 10, -bounds.height / 2 - 5, bounds.width + 20, bounds.height + 10, 10);
+    bg.beginFill(0x000000, 0.7);
+    bg.lineStyle(2, 0xFFFF00, 1);
+    bg.drawRoundedRect(-bounds.width / 2 - 15, -bounds.height / 2 - 8, bounds.width + 30, bounds.height + 16, 12);
     bg.endFill();
 
     const container = new PIXI.Container();
     container.addChild(bg);
     container.addChild(notification);
     container.x = this.app.screen.width / 2;
-    container.y = 100;
+    container.y = 20; // Position higher to avoid overlapping with game grid
 
     this.app.stage.addChild(container);
 
